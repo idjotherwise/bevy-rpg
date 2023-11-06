@@ -1,11 +1,13 @@
 #![allow(clippy::type_complexity)]
 
 mod actions;
+mod bullet;
 mod loading;
 mod menu;
 mod player;
 
 use crate::actions::ActionsPlugin;
+use crate::bullet::BulletPlugin;
 use crate::loading::LoadingPlugin;
 use crate::menu::MenuPlugin;
 use crate::player::PlayerPlugin;
@@ -38,6 +40,7 @@ impl Plugin for GamePlugin {
             MenuPlugin,
             ActionsPlugin,
             PlayerPlugin,
+            BulletPlugin,
         ));
 
         #[cfg(debug_assertions)]

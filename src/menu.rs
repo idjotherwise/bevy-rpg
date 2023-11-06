@@ -30,8 +30,15 @@ impl Default for ButtonColors {
 #[derive(Component)]
 struct Menu;
 
+#[derive(Resource, Default)]
+pub struct WorldCoords(pub Vec2);
+
+#[derive(Component)]
+pub struct MainCamera;
+
 fn setup_menu(mut commands: Commands, textures: Res<TextureAssets>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.init_resource::<WorldCoords>();
+    commands.spawn((Camera2dBundle::default(), MainCamera));
     commands
         .spawn((
             NodeBundle {

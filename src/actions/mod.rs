@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
 use crate::actions::game_control::{get_movement, GameControl};
+use crate::menu::{MainCamera, WorldCoords};
 use crate::player::Player;
 use crate::GameState;
 
@@ -31,7 +32,7 @@ impl Plugin for ActionsPlugin {
 #[derive(Default, Resource)]
 pub struct Actions {
     pub player_movement: Option<Vec2>,
-    pub shoot_direction: Option<Vec2>,
+    pub bullet_movement: Option<Vec2>,
 }
 
 pub fn set_movement_actions(
@@ -68,21 +69,32 @@ pub fn set_movement_actions(
 
 pub fn set_gun_actions(
     mut actions: ResMut<Actions>,
+    mut mycoords: ResMut<WorldCoords>,
     keyboard_input: Res<Input<KeyCode>>,
     player: Query<&Transform, With<Player>>,
-    camera: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
+    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     q_windows: Query<&Window, With<PrimaryWindow>>,
 ) {
-    let position = q_windows.single().cursor_position();
-    let shoot_direction = get_shoot(GameControl::Shoot, &keyboard_input);
+    let (camera, camera_transform) = q_camera.single();
+    let window = q_windows.single();
 
-    if shoot_direction != 0.0 {
-        if let Some(p) = position {
-            actions.shoot_direction = Some(p.normalize());
+    if let Some(world_position) = window
+        .cursor_position()
+        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+        .map(|ray| ray.origin.truncate())
+    {
+        mycoords.0 = world_position;
+        // eprintln!("World coords: {}/{}", world_position.x, world_position.y);
+
+        let shoot_direction = get_shoot(GameControl::Shoot, &keyboard_input);
+        if shoot_direction != 0.0 {
+            if let Some(p) = Some(world_position) {
+                actions.bullet_movement = Some(p);
+            } else {
+                actions.bullet_movement = None;
+            }
         } else {
-            actions.shoot_direction = None;
+            actions.bullet_movement = None;
         }
-    } else {
-        actions.shoot_direction = None;
     }
 }

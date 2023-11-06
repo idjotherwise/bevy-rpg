@@ -19,6 +19,8 @@ pub struct TextureAssets {
     pub bevy: Handle<Image>,
     #[asset(path = "character.png")]
     pub character: Handle<Image>,
+    #[asset(path = "bolt.png")]
+    pub bolt: Handle<Image>,
     // can handle padding with `padding_x` and `padding_y`
     // can handle space between top left corner and first sprite with `offset_x` and `offset_y`
     // #[asset(texture_atlas(tile_size_x = 96., tile_size_y = 99., columns = 8, rows = 1))]

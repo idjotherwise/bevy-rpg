@@ -10,8 +10,7 @@ pub struct Player;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Playing), spawn_player)
-            .add_systems(Update, move_player.run_if(in_state(GameState::Playing)))
-            .add_systems(Update, shoot.run_if(in_state(GameState::Playing)));
+            .add_systems(Update, move_player.run_if(in_state(GameState::Playing)));
     }
 }
 
@@ -42,11 +41,4 @@ fn move_player(
     for mut player_transform in &mut player_query {
         player_transform.translation += movement;
     }
-}
-
-fn shoot(actions: Res<Actions>) {
-    if actions.shoot_direction.is_none() {
-        return;
-    }
-    println!("shooting at {:?}", actions.shoot_direction.unwrap())
 }
