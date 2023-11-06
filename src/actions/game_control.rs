@@ -5,6 +5,7 @@ pub enum GameControl {
     Down,
     Left,
     Right,
+    Shoot,
 }
 
 impl GameControl {
@@ -22,11 +23,20 @@ impl GameControl {
             GameControl::Right => {
                 keyboard_input.pressed(KeyCode::D) || keyboard_input.pressed(KeyCode::Right)
             }
+            GameControl::Shoot => keyboard_input.pressed(KeyCode::Space),
         }
     }
 }
 
 pub fn get_movement(control: GameControl, input: &Res<Input<KeyCode>>) -> f32 {
+    if control.pressed(input) {
+        1.0
+    } else {
+        0.0
+    }
+}
+
+pub fn get_shoot(control: GameControl, input: &Res<Input<KeyCode>>) -> f32 {
     if control.pressed(input) {
         1.0
     } else {

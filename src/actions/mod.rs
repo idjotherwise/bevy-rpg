@@ -1,9 +1,12 @@
 use bevy::math::Vec3Swizzles;
 use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 
 use crate::actions::game_control::{get_movement, GameControl};
 use crate::player::Player;
 use crate::GameState;
+
+use self::game_control::get_shoot;
 
 mod game_control;
 
@@ -17,7 +20,10 @@ impl Plugin for ActionsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Actions>().add_systems(
             Update,
-            set_movement_actions.run_if(in_state(GameState::Playing)),
+            (
+                set_movement_actions.run_if(in_state(GameState::Playing)),
+                set_gun_actions.run_if(in_state(GameState::Playing)),
+            ),
         );
     }
 }
@@ -25,6 +31,7 @@ impl Plugin for ActionsPlugin {
 #[derive(Default, Resource)]
 pub struct Actions {
     pub player_movement: Option<Vec2>,
+    pub shoot_direction: Option<Vec2>,
 }
 
 pub fn set_movement_actions(
@@ -56,5 +63,26 @@ pub fn set_movement_actions(
         actions.player_movement = Some(player_movement.normalize());
     } else {
         actions.player_movement = None;
+    }
+}
+
+pub fn set_gun_actions(
+    mut actions: ResMut<Actions>,
+    keyboard_input: Res<Input<KeyCode>>,
+    player: Query<&Transform, With<Player>>,
+    camera: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
+    q_windows: Query<&Window, With<PrimaryWindow>>,
+) {
+    let position = q_windows.single().cursor_position();
+    let shoot_direction = get_shoot(GameControl::Shoot, &keyboard_input);
+
+    if shoot_direction != 0.0 {
+        if let Some(p) = position {
+            actions.shoot_direction = Some(p.normalize());
+        } else {
+            actions.shoot_direction = None;
+        }
+    } else {
+        actions.shoot_direction = None;
     }
 }
