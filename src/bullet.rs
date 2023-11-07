@@ -1,10 +1,20 @@
-use crate::{actions::Actions, loading::TextureAssets, GameState};
-use bevy::prelude::*;
+use crate::player::Player;
+use crate::{
+    actions::Actions,
+    loading::TextureAssets,
+    menu::{MainCamera, WorldCoords},
+    GameState,
+};
+use bevy::{prelude::*, window::PrimaryWindow};
 
 pub struct BulletPlugin;
 
 #[derive(Component)]
-pub struct Bullet;
+pub struct Bullet {
+    pub lifetime: f32,
+    pub speed: f32,
+    pub direction: Vec2,
+}
 
 /// Bullet related stuff like movement
 impl Plugin for BulletPlugin {
@@ -14,39 +24,57 @@ impl Plugin for BulletPlugin {
     }
 }
 
-fn spawn_bullet(actions: Res<Actions>, mut commands: Commands, textures: Res<TextureAssets>) {
-    if actions.bullet_movement.is_none() {
+fn spawn_bullet(
+    actions: Res<Actions>,
+    mut commands: Commands,
+    mut mycoords: ResMut<WorldCoords>,
+    textures: Res<TextureAssets>,
+    keyboard_input: Res<Input<KeyCode>>,
+    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+    q_windows: Query<&Window, With<PrimaryWindow>>,
+    player: Query<&Transform, With<Player>>,
+) {
+    if !keyboard_input.pressed(KeyCode::Space) {
         return;
     }
-    println!("shooting at {:?}", actions.bullet_movement.unwrap());
-    let (x, y) = (
-        actions.bullet_movement.unwrap().x,
-        actions.bullet_movement.unwrap().y,
-    );
-    commands
-        .spawn(SpriteBundle {
-            transform: Transform::from_translation(Vec3::new(x, y, 0.)),
-            texture: textures.bolt.clone(),
-            ..Default::default()
-        })
-        .insert(Bullet);
+    let (camera, camera_transform) = q_camera.single();
+    let window = q_windows.single();
+
+    if let Some(world_position) = window
+        .cursor_position()
+        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+        .map(|ray| ray.origin.truncate())
+    {
+        commands
+            .spawn(SpriteBundle {
+                transform: Transform::from_translation(Vec3::new(
+                    player.single().translation.x,
+                    player.single().translation.y,
+                    0.,
+                )),
+                texture: textures.bolt.clone(),
+                ..Default::default()
+            })
+            .insert(Bullet {
+                lifetime: 1.,
+                speed: 1.,
+                direction: Vec2::new(world_position.x, world_position.y),
+            });
+    }
 }
 
 fn move_bullet(
     time: Res<Time>,
     actions: Res<Actions>,
-    mut bullet_query: Query<&mut Transform, With<Bullet>>,
+    mut commands: Commands,
+    mut bullet_query: Query<(&mut Transform, &mut Bullet, Entity)>,
 ) {
-    if actions.bullet_movement.is_none() {
-        return;
-    }
-    let speed = 150.;
-    let movement = Vec3::new(
-        actions.bullet_movement.unwrap().x * speed * time.delta_seconds(),
-        actions.bullet_movement.unwrap().y * speed * time.delta_seconds(),
-        0.,
-    );
-    for mut bullet_transform in &mut bullet_query {
-        bullet_transform.translation += movement;
+    for (mut bullet_transform, mut bullet, entity) in bullet_query.iter_mut() {
+        bullet.lifetime -= time.delta_seconds();
+        let moving = bullet.direction * bullet.speed * time.delta_seconds();
+        bullet_transform.translation += Vec3::new(moving.x, moving.y, 0.);
+        if bullet.lifetime <= 0. {
+            commands.entity(entity).despawn();
+        }
     }
 }
