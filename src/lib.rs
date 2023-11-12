@@ -2,12 +2,13 @@
 
 mod actions;
 mod bullet;
+mod enemy;
 mod loading;
 mod menu;
 mod player;
-
 use crate::actions::ActionsPlugin;
 use crate::bullet::BulletPlugin;
+use crate::enemy::EnemyPlugin;
 use crate::loading::LoadingPlugin;
 use crate::menu::MenuPlugin;
 use crate::player::PlayerPlugin;
@@ -43,6 +44,7 @@ impl Plugin for GamePlugin {
             ActionsPlugin,
             PlayerPlugin,
             BulletPlugin,
+            EnemyPlugin,
         ));
 
         #[cfg(debug_assertions)]
