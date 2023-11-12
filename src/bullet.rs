@@ -5,6 +5,7 @@ use crate::{
     menu::{MainCamera, WorldCoords},
     GameState,
 };
+// use bevy::sprite::MaterialMesh2dBundle;
 use bevy::{prelude::*, window::PrimaryWindow};
 
 pub struct BulletPlugin;
@@ -26,6 +27,7 @@ impl Plugin for BulletPlugin {
 
 fn spawn_bullet(
     actions: Res<Actions>,
+    mut meshes: ResMut<Assets<Mesh>>,
     mut commands: Commands,
     mut mycoords: ResMut<WorldCoords>,
     textures: Res<TextureAssets>,
@@ -47,13 +49,17 @@ fn spawn_bullet(
     {
         commands
             .spawn(SpriteBundle {
+                sprite: Sprite {
+                    color: Color::rgb(0., 0., 0.),
+                    custom_size: Some(Vec2::new(4., 2.)),
+                    ..default()
+                },
                 transform: Transform::from_translation(Vec3::new(
                     player.single().translation.x,
                     player.single().translation.y,
                     0.,
                 )),
-                texture: textures.bolt.clone(),
-                ..Default::default()
+                ..default()
             })
             .insert(Bullet {
                 lifetime: 1.,

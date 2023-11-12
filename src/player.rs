@@ -17,7 +17,8 @@ impl Plugin for PlayerPlugin {
 fn spawn_player(mut commands: Commands, textures: Res<TextureAssets>) {
     commands
         .spawn(SpriteBundle {
-            transform: Transform::from_translation(Vec3::new(0., 0., 1.)),
+            transform: Transform::from_translation(Vec3::new(0., 0., 1.))
+                .with_scale(Vec3::new(4., 4., 1.)),
             texture: textures.character.clone(),
             ..Default::default()
         })
