@@ -1,11 +1,5 @@
 use crate::player::Player;
-use crate::{
-    actions::Actions,
-    loading::TextureAssets,
-    menu::{MainCamera, WorldCoords},
-    GameState,
-};
-// use bevy::sprite::MaterialMesh2dBundle;
+use crate::{menu::MainCamera, GameState};
 use bevy::{prelude::*, window::PrimaryWindow};
 
 pub struct BulletPlugin;
@@ -26,11 +20,7 @@ impl Plugin for BulletPlugin {
 }
 
 fn spawn_bullet(
-    actions: Res<Actions>,
-    mut meshes: ResMut<Assets<Mesh>>,
     mut commands: Commands,
-    mut mycoords: ResMut<WorldCoords>,
-    textures: Res<TextureAssets>,
     keyboard_input: Res<Input<KeyCode>>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     q_windows: Query<&Window, With<PrimaryWindow>>,
@@ -71,7 +61,6 @@ fn spawn_bullet(
 
 fn move_bullet(
     time: Res<Time>,
-    actions: Res<Actions>,
     mut commands: Commands,
     mut bullet_query: Query<(&mut Transform, &mut Bullet, Entity)>,
 ) {
