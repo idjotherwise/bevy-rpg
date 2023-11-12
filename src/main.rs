@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use bevy::DefaultPlugins;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use ninja_killers_10::GamePlugin;
 
@@ -15,6 +14,5 @@ fn main() {
             ..default()
         }))
         .add_plugins(GamePlugin)
-        .add_plugins(WorldInspectorPlugin::new())
-        .run();
+        .run()
 }

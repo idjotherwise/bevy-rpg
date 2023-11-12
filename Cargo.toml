@@ -11,6 +11,7 @@ inherits = "release"
 lto = "thin"
 
 [features]
+default = ["dev"]
 dev = [
 "bevy-inspector-egui", "bevy/bevy_dylib"
 ]
