@@ -48,7 +48,7 @@ fn spawn_enemy(
                     1.,
                 ))
                 .with_scale(Vec3::new(2., 2., 1.)),
-                texture: textures.monster.clone(),
+                texture: textures.ninja.clone(),
                 ..Default::default()
             })
             .insert(Enemy {

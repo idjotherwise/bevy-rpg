@@ -17,8 +17,11 @@ impl Plugin for LoadingPlugin {
 pub struct TextureAssets {
     #[asset(path = "bevy_pixel_dark.png")]
     pub bevy: Handle<Image>,
+    #[asset(texture_atlas(tile_size_x = 16., tile_size_y = 16., columns = 2, rows = 1))]
+    #[asset(path = "shuriken.png")]
+    pub shuriken: Handle<TextureAtlas>,
     #[asset(path = "character.png")]
     pub character: Handle<Image>,
     #[asset(path = "enemy.png")]
-    pub monster: Handle<Image>,
+    pub ninja: Handle<Image>,
 }
