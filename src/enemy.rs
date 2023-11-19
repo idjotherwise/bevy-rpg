@@ -11,7 +11,7 @@ pub struct Collider;
 pub struct Enemy {
     pub direction: Vec2,
     pub health: i32,
-    collider: Collider,
+    pub collider: Collider,
 }
 
 // TODO: Move to own submodule
@@ -26,7 +26,7 @@ pub struct SpawnTimer(pub Timer);
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, spawn_enemy.run_if(in_state(GameState::Playing)))
-            .insert_resource(SpawnTimer(Timer::from_seconds(0.5, TimerMode::Repeating)))
+            .insert_resource(SpawnTimer(Timer::from_seconds(1., TimerMode::Repeating)))
             .add_event::<CollisionEvent>()
             .add_systems(Update, move_enemy.run_if(in_state(GameState::Playing)));
     }
@@ -97,7 +97,7 @@ fn move_enemy(
                 transform.translation,
                 transform.scale.truncate() * 5.,
             );
-            if let Some(collision) = collision {
+            if collision.is_some() {
                 collision_events.send_default();
 
                 if maybe_enemy.is_some() {

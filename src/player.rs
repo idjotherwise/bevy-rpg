@@ -4,7 +4,9 @@ use bevy::{prelude::*, window::PrimaryWindow};
 pub struct PlayerPlugin;
 
 #[derive(Component)]
-pub struct Player;
+pub struct Player {
+    pub direction: Vec2,
+}
 
 /// Player related stuff like movement
 impl Plugin for PlayerPlugin {
@@ -22,7 +24,9 @@ fn spawn_player(mut commands: Commands, textures: Res<TextureAssets>) {
             texture: textures.character.clone(),
             ..Default::default()
         })
-        .insert(Player);
+        .insert(Player {
+            direction: Vec2::new(1., 0.).normalize(),
+        });
 }
 
 fn move_player(

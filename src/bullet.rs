@@ -1,6 +1,7 @@
+use crate::actions::Actions;
 use crate::player::Player;
-use crate::{menu::MainCamera, GameState};
-use bevy::{prelude::*, window::PrimaryWindow};
+use crate::GameState;
+use bevy::prelude::*;
 
 pub struct BulletPlugin;
 
@@ -21,42 +22,38 @@ impl Plugin for BulletPlugin {
 
 fn spawn_bullet(
     mut commands: Commands,
+    actions: Res<Actions>,
     keyboard_input: Res<Input<KeyCode>>,
-    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    q_windows: Query<&Window, With<PrimaryWindow>>,
-    player: Query<&Transform, With<Player>>,
+    player: Query<(&Transform, &Player), With<Player>>,
 ) {
     if !keyboard_input.pressed(KeyCode::Space) {
         return;
     }
-    let (camera, camera_transform) = q_camera.single();
-    let window = q_windows.single();
 
-    if let Some(world_position) = window
-        .cursor_position()
-        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
-        .map(|ray| ray.origin.truncate())
-    {
-        commands
-            .spawn(SpriteBundle {
-                sprite: Sprite {
-                    color: Color::rgb(0., 0., 0.),
-                    custom_size: Some(Vec2::new(4., 2.)),
-                    ..default()
-                },
-                transform: Transform::from_translation(Vec3::new(
-                    player.single().translation.x,
-                    player.single().translation.y,
-                    0.,
-                )),
+    let bullet_direction = if actions.player_movement.is_none() {
+        player.single().1.direction
+    } else {
+        actions.player_movement.unwrap()
+    };
+    commands
+        .spawn(SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgb(0., 0., 0.),
+                custom_size: Some(Vec2::new(4., 2.)),
                 ..default()
-            })
-            .insert(Bullet {
-                lifetime: 10.,
-                speed: 1.,
-                direction: Vec2::new(world_position.x, world_position.y),
-            });
-    }
+            },
+            transform: Transform::from_translation(Vec3::new(
+                player.single().0.translation.x,
+                player.single().0.translation.y,
+                0.,
+            )),
+            ..default()
+        })
+        .insert(Bullet {
+            lifetime: 10.,
+            speed: 200.,
+            direction: bullet_direction,
+        });
 }
 
 fn move_bullet(
@@ -64,10 +61,11 @@ fn move_bullet(
     mut commands: Commands,
     mut bullet_query: Query<(&mut Transform, &mut Bullet, Entity)>,
 ) {
+    // TODO: Animate shuriken sprite when it is in
     for (mut bullet_transform, mut bullet, entity) in bullet_query.iter_mut() {
         bullet.lifetime -= time.delta_seconds();
         // TODO: reduce speed to 0 then to -1 for boomerang effect. Or add curved effect by modifying the direction vec
-        let moving = bullet.direction * time.delta_seconds();
+        let moving = bullet.direction * bullet.speed * time.delta_seconds();
         bullet_transform.translation += Vec3::new(moving.x, moving.y, 0.);
         if bullet.lifetime <= 0. {
             commands.entity(entity).despawn();
