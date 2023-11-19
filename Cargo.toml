@@ -12,9 +12,7 @@ lto = "thin"
 
 [features]
 default = ["dev"]
-dev = [
-"bevy-inspector-egui", "bevy/bevy_dylib"
-]
+dev = ["bevy-inspector-egui", "bevy/bevy_dylib"]
 
 [dependencies]
 bevy = { version = "0.11.0", default_features = false, features = [
@@ -43,4 +41,5 @@ bevy = { version = "0.11.0", default_features = false, features = [
 ] }
 bevy-inspector-egui = {version = "0.20.0", optional=true}
 bevy_asset_loader = { version = "0.17.0", features = ["2d"] }
+rand = "0.8.5"
 webbrowser = { version = "0.8.12", features = ["hardened"] }

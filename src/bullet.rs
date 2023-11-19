@@ -52,7 +52,7 @@ fn spawn_bullet(
                 ..default()
             })
             .insert(Bullet {
-                lifetime: 1.,
+                lifetime: 10.,
                 speed: 1.,
                 direction: Vec2::new(world_position.x, world_position.y),
             });
@@ -66,7 +66,8 @@ fn move_bullet(
 ) {
     for (mut bullet_transform, mut bullet, entity) in bullet_query.iter_mut() {
         bullet.lifetime -= time.delta_seconds();
-        let moving = bullet.direction * bullet.speed * time.delta_seconds();
+        // TODO: reduce speed to 0 then to -1 for boomerang effect. Or add curved effect by modifying the direction vec
+        let moving = bullet.direction * time.delta_seconds();
         bullet_transform.translation += Vec3::new(moving.x, moving.y, 0.);
         if bullet.lifetime <= 0. {
             commands.entity(entity).despawn();
