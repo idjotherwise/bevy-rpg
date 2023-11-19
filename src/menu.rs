@@ -187,6 +187,7 @@ struct OpenLink(&'static str);
 
 fn click_play_button(
     mut next_state: ResMut<NextState<GameState>>,
+    touch: Res<Touches>,
     mut interaction_query: Query<
         (
             &Interaction,
@@ -198,6 +199,9 @@ fn click_play_button(
         (Changed<Interaction>, With<Button>),
     >,
 ) {
+    if touch.first_pressed_position().is_some() {
+        next_state.set(GameState::Playing);
+    };
     for (interaction, mut color, button_colors, change_state, open_link) in &mut interaction_query {
         match *interaction {
             Interaction::Pressed => {
