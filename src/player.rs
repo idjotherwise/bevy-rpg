@@ -36,6 +36,7 @@ fn spawn_player(mut commands: Commands, textures: Res<TextureAssets>) {
         });
 }
 
+#[allow(clippy::too_many_arguments)]
 fn move_player(
     mut commands: Commands,
     mut next_state: ResMut<NextState<GameState>>,
