@@ -52,7 +52,8 @@ fn spawn_bullet(
                 player.single().0.translation.x,
                 player.single().0.translation.y,
                 0.,
-            )),
+            ))
+            .with_scale(Vec3::new(2., 2., 1.)),
             sprite: TextureAtlasSprite::new(0),
             texture_atlas: textures.shuriken.clone(),
             ..default()
@@ -70,14 +71,12 @@ fn move_bullet(
     mut commands: Commands,
     mut bullet_query: Query<(&mut Transform, &mut Bullet, Entity, &mut TextureAtlasSprite)>,
 ) {
-    // TODO: Animate shuriken sprite when it is in
     for (mut bullet_transform, mut bullet, entity, mut sprite) in bullet_query.iter_mut() {
         bullet.lifetime -= time.delta_seconds();
         bullet.animation_timer.tick(time.delta());
         if bullet.animation_timer.finished() {
             sprite.index = (sprite.index + 1) % 2;
         }
-        // TODO: reduce speed to 0 then to -1 for boomerang effect. Or add curved effect by modifying the direction vec
         let moving = bullet.direction * bullet.speed * time.delta_seconds();
         bullet_transform.translation += Vec3::new(moving.x, moving.y, 0.);
         if bullet.lifetime <= 0. {

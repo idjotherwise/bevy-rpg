@@ -12,6 +12,7 @@ pub struct Enemy {
     pub direction: Vec2,
     pub health: i32,
     pub collider: Collider,
+    pub direction_timer: Timer,
 }
 
 // TODO: Move to own submodule
@@ -26,7 +27,7 @@ pub struct SpawnTimer(pub Timer);
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, spawn_enemy.run_if(in_state(GameState::Playing)))
-            .insert_resource(SpawnTimer(Timer::from_seconds(1., TimerMode::Repeating)))
+            .insert_resource(SpawnTimer(Timer::from_seconds(2., TimerMode::Repeating)))
             .add_event::<CollisionEvent>()
             .add_systems(Update, move_enemy.run_if(in_state(GameState::Playing)));
     }
@@ -56,6 +57,10 @@ fn spawn_enemy(
                     .normalize(),
                 health: 10,
                 collider: Collider,
+                direction_timer: Timer::from_seconds(
+                    rng.gen_range(3.0..10.0),
+                    TimerMode::Repeating,
+                ),
             });
     };
 }
@@ -63,7 +68,7 @@ fn spawn_enemy(
 fn move_enemy(
     time: Res<Time>,
     mut commands: Commands,
-    mut enemy_query: Query<(Entity, &mut Transform, Option<&Enemy>), With<Enemy>>,
+    mut enemy_query: Query<(Entity, &mut Transform, Option<&mut Enemy>), With<Enemy>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     bullet_query: Query<&Transform, (With<Bullet>, Without<Enemy>)>,
     mut collision_events: EventWriter<CollisionEvent>,
@@ -76,7 +81,7 @@ fn move_enemy(
     let y_min = -(window.height() / 2.0) + half_enemy_size;
     let y_max = window.height() / 2.0 - half_enemy_size;
     for (_, mut enemy_transform, enemy) in &mut enemy_query {
-        if let Some(enemy) = enemy {
+        if let Some(mut enemy) = enemy {
             let movement = Vec3::new(
                 enemy.direction.x * speed * time.delta_seconds(),
                 enemy.direction.y * speed * time.delta_seconds(),
@@ -86,6 +91,13 @@ fn move_enemy(
             if new_pos.x > x_min && new_pos.x < x_max && new_pos.y > y_min && new_pos.y < y_max {
                 enemy_transform.translation += movement;
             }
+            enemy.direction_timer.tick(time.delta());
+            if enemy.direction_timer.finished() {
+                let mut rng = rand::thread_rng();
+                let new_direction =
+                    Vec2::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0)).normalize();
+                enemy.direction = new_direction;
+            }
         }
     }
     for bullet_transform in &bullet_query {
@@ -93,13 +105,15 @@ fn move_enemy(
             let bullet_size = bullet_transform.scale.truncate();
             let collision = collide(
                 bullet_transform.translation,
-                bullet_size * 5.,
+                bullet_size * 10.,
                 transform.translation,
                 transform.scale.truncate() * 5.,
             );
             if collision.is_some() {
                 collision_events.send_default();
 
+                // TODO: Decrease durability of bullet until it despawns
+                // TODO: Increase a score counter when enemy is hit
                 if maybe_enemy.is_some() {
                     commands.entity(collider_entity).despawn();
                 }
