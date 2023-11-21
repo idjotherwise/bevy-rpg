@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+mod leaderboard;
+use crate::menu::leaderboard::Leaderboard;
 use crate::{loading::TextureAssets, player::Death, GameState};
 
 pub struct MenuPlugin;
@@ -7,6 +9,7 @@ pub struct MenuPlugin;
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Menu), setup_menu)
+            .insert_resource(Leaderboard::new(vec![Score::new(1.0, "Ifan")]))
             .add_systems(Update, click_play_button.run_if(in_state(GameState::Menu)))
             .add_systems(OnExit(GameState::Menu), cleanup_menu);
     }
@@ -29,9 +32,6 @@ impl Default for ButtonColors {
 
 #[derive(Component)]
 struct Menu;
-
-#[derive(Resource, Default)]
-pub struct WorldCoords(pub Vec2);
 
 #[derive(Component)]
 pub struct MainCamera;
