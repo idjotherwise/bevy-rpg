@@ -1,5 +1,3 @@
-mod menu;
-
 use bevy::prelude::*;
 use bevy::DefaultPlugins;
 

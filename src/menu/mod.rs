@@ -1,15 +1,19 @@
 use bevy::prelude::*;
 
-mod leaderboard;
-use crate::menu::leaderboard::Leaderboard;
-use crate::{loading::TextureAssets, player::Death, GameState};
+use crate::loading::TextureAssets;
+pub use crate::menu::leaderboard::Leaderboard;
+pub use crate::menu::leaderboard::Score;
+use crate::player::Death;
+use crate::GameState;
 
+mod leaderboard;
 pub struct MenuPlugin;
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Menu), setup_menu)
-            .insert_resource(Leaderboard::new(vec![Score::new(1.0, "Ifan")]))
+            .init_resource::<Score>()
+            .insert_resource(Leaderboard::default())
             .add_systems(Update, click_play_button.run_if(in_state(GameState::Menu)))
             .add_systems(OnExit(GameState::Menu), cleanup_menu);
     }
@@ -39,6 +43,7 @@ pub struct MainCamera;
 fn setup_menu(
     mut commands: Commands,
     textures: Res<TextureAssets>,
+    leaderboard: Res<Leaderboard>,
     mut message: EventReader<Death>,
 ) {
     commands.spawn((Camera2dBundle::default(), MainCamera));
@@ -90,6 +95,39 @@ fn setup_menu(
                     ));
                 });
         });
+    commands
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::SpaceAround,
+                    left: Val::Px(10.),
+                    height: Val::Percent(90.),
+                    position_type: PositionType::Absolute,
+                    ..default()
+                },
+                ..default()
+            },
+            Menu,
+        ))
+        .with_children(|children| {
+            for score in &leaderboard.leaderboard {
+                if score.score > 0 {
+                    children.spawn({
+                        TextBundle::from_section(
+                            format!("Score: {}", score.score),
+                            TextStyle {
+                                font_size: 18.0,
+                                color: Color::rgb(0.9, 0.9, 0.9),
+                                ..default()
+                            },
+                        )
+                    });
+                }
+            }
+        });
+
     if message.is_empty() {
         commands
             .spawn((
@@ -186,6 +224,33 @@ fn setup_menu(
                     });
             });
     } else {
+        commands
+            .spawn((
+                NodeBundle {
+                    style: Style {
+                        flex_direction: FlexDirection::Row,
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::SpaceAround,
+                        bottom: Val::Px(5.),
+                        width: Val::Percent(100.),
+                        position_type: PositionType::Absolute,
+                        ..default()
+                    },
+                    ..default()
+                },
+                Menu,
+            ))
+            .with_children(|children| {
+                children.spawn(TextBundle::from_section(
+                    message.iter().next().unwrap().message.to_string(),
+                    TextStyle {
+                        font_size: 15.0,
+                        color: Color::rgb(0.9, 0.9, 0.9),
+                        ..default()
+                    },
+                ));
+            });
+
         message.clear();
     };
 }

@@ -1,3 +1,4 @@
+use crate::menu::Score;
 use crate::{bullet::Bullet, loading::TextureAssets, GameState};
 use bevy::{prelude::*, sprite::collide_aabb::collide, window::PrimaryWindow};
 use rand::prelude::*;
@@ -27,7 +28,7 @@ pub struct SpawnTimer(pub Timer);
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, spawn_enemy.run_if(in_state(GameState::Playing)))
-            .insert_resource(SpawnTimer(Timer::from_seconds(2., TimerMode::Repeating)))
+            .insert_resource(SpawnTimer(Timer::from_seconds(0.5, TimerMode::Repeating)))
             .add_event::<CollisionEvent>()
             .add_systems(Update, move_enemy.run_if(in_state(GameState::Playing)));
     }
@@ -72,6 +73,7 @@ fn move_enemy(
     window_query: Query<&Window, With<PrimaryWindow>>,
     bullet_query: Query<&Transform, (With<Bullet>, Without<Enemy>)>,
     mut collision_events: EventWriter<CollisionEvent>,
+    mut score: ResMut<Score>,
 ) {
     let window = window_query.get_single().unwrap();
     let half_enemy_size = 32.;
@@ -114,6 +116,7 @@ fn move_enemy(
 
                 // TODO: Decrease durability of bullet until it despawns
                 // TODO: Increase a score counter when enemy is hit
+                score.score += 1;
                 if maybe_enemy.is_some() {
                     commands.entity(collider_entity).despawn();
                 }

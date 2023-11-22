@@ -1,5 +1,13 @@
-use crate::{actions::Actions, bullet::Bullet, enemy::Enemy, loading::TextureAssets, GameState};
+use crate::{
+    actions::Actions,
+    bullet::Bullet,
+    enemy::Enemy,
+    loading::TextureAssets,
+    menu::{Leaderboard, Score},
+    GameState,
+};
 use bevy::{prelude::*, sprite::collide_aabb::collide, window::PrimaryWindow};
+use rand::seq::SliceRandom;
 
 pub struct PlayerPlugin;
 
@@ -19,14 +27,14 @@ impl Plugin for PlayerPlugin {
         app.add_systems(OnEnter(GameState::Playing), spawn_player)
             .add_event::<Death>()
             .add_systems(Update, move_player.run_if(in_state(GameState::Playing)))
-            .add_systems(OnExit(GameState::Playing), cleanup_entities);
+            .add_systems(OnExit(GameState::Playing), finish_level);
     }
 }
 
 fn spawn_player(mut commands: Commands, textures: Res<TextureAssets>) {
     commands
         .spawn(SpriteBundle {
-            transform: Transform::from_translation(Vec3::new(0., 0., 1.))
+            transform: Transform::from_translation(Vec3::new(0., 200., 1.))
                 .with_scale(Vec3::new(2., 2., 1.)),
             texture: textures.character.clone(),
             ..Default::default()
@@ -38,11 +46,10 @@ fn spawn_player(mut commands: Commands, textures: Res<TextureAssets>) {
 
 #[allow(clippy::too_many_arguments)]
 fn move_player(
-    mut commands: Commands,
     mut next_state: ResMut<NextState<GameState>>,
     time: Res<Time>,
     actions: Res<Actions>,
-    mut player_query: Query<(&mut Transform, Entity), With<Player>>,
+    mut player_query: Query<(&mut Transform, &mut Player), With<Player>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     enemy_query: Query<&Transform, (With<Enemy>, Without<Player>)>,
     mut collision_event: EventWriter<Death>,
@@ -63,7 +70,8 @@ fn move_player(
     let x_max = window.width() / 2.0 - half_player_size;
     let y_min = -(window.height() / 2.0) + half_player_size;
     let y_max = window.height() / 2.0 - half_player_size;
-    let (mut player_transform, player_entity) = player_query.single_mut();
+    let (mut player_transform, mut player) = player_query.single_mut();
+    player.direction = actions.player_movement.unwrap();
     let new_pos = player_transform.translation + movement;
     if new_pos.x > x_min && new_pos.x < x_max && new_pos.y > y_min && new_pos.y < y_max {
         player_transform.translation += movement;
@@ -77,21 +85,36 @@ fn move_player(
             enemy_transform.scale.truncate() * 10.0,
         );
         if collision.is_some() {
+            let msgs = vec![
+                "The ninjas got to you!",
+                "Oh no you got hit again :(",
+                "Did you try running away from the ninjas?",
+                "Press Space to throw your shuriken!",
+                "That was great, but you can do better!",
+                "You need to practice turning into a cactus when you are still.",
+            ];
+
             collision_event.send(Death {
-                message: "The ninjas got to you!".to_string(),
+                message: msgs
+                    .choose(&mut rand::thread_rng())
+                    .expect("No death message found")
+                    .to_string(),
             });
             next_state.set(GameState::Menu);
-            commands.entity(player_entity).despawn();
         }
     }
 }
-fn cleanup_entities(
+fn finish_level(
     mut commands: Commands,
     q_player: Query<Entity, With<Player>>,
     q_enemy: Query<Entity, With<Enemy>>,
     q_bullets: Query<Entity, With<Bullet>>,
     q_camera: Query<Entity, With<Camera2d>>,
+    mut leaderboard: ResMut<Leaderboard>,
+    mut score: ResMut<Score>,
 ) {
+    leaderboard.add_score(score.score);
+    score.score = 0;
     for entity in q_player.iter() {
         commands.entity(entity).despawn_recursive();
     }
