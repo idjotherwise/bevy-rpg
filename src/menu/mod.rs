@@ -45,7 +45,23 @@ fn setup_menu(
     textures: Res<TextureAssets>,
     leaderboard: Res<Leaderboard>,
     mut message: EventReader<Death>,
+    mut evr_char: EventReader<ReceivedCharacter>,
+    kbd: Res<Input<KeyCode>>,
+    mut string: Local<String>,
 ) {
+    if kbd.just_pressed(KeyCode::Return) {
+        println!("Playing as: {}", &*string);
+        string.clear();
+    }
+    if kbd.just_pressed(KeyCode::Back) {
+        string.pop();
+    }
+    for ev in evr_char.iter() {
+        if !ev.char.is_control() {
+            string.push(ev.char);
+        }
+    }
+
     commands.spawn((Camera2dBundle::default(), MainCamera));
     commands
         .spawn((
@@ -83,9 +99,9 @@ fn setup_menu(
                 .with_children(|parent| {
                     parent.spawn(TextBundle::from_section(
                         if message.is_empty() {
-                            "Play"
+                            "Play".to_string()
                         } else {
-                            "Restart"
+                            "Restart".to_string()
                         },
                         TextStyle {
                             font_size: 40.0,
