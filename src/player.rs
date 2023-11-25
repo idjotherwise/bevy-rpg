@@ -114,7 +114,13 @@ fn finish_level(
     mut leaderboard: ResMut<Leaderboard>,
     mut score: ResMut<Score>,
 ) {
-    leaderboard.add_score(player_name.0.to_string(), score.score);
+    let maybe_name = &*player_name.0;
+    let name = if maybe_name == "" {
+        "Anonymous".to_string()
+    } else {
+        maybe_name.to_string()
+    };
+    leaderboard.add_score(name, score.score);
     score.score = 0;
     for entity in q_player.iter() {
         commands.entity(entity).despawn_recursive();

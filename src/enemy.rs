@@ -23,14 +23,34 @@ struct CollisionEvent;
 
 #[derive(Resource)]
 pub struct SpawnTimer(pub Timer);
+#[derive(Resource)]
+pub struct SpawnTimerModifier(pub Timer);
 
 /// Enemy related stuff like movement
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, spawn_enemy.run_if(in_state(GameState::Playing)))
-            .insert_resource(SpawnTimer(Timer::from_seconds(0.5, TimerMode::Repeating)))
+            .insert_resource(SpawnTimer(Timer::from_seconds(2., TimerMode::Repeating)))
+            .insert_resource(SpawnTimerModifier(Timer::from_seconds(
+                20.,
+                TimerMode::Repeating,
+            )))
             .add_event::<CollisionEvent>()
-            .add_systems(Update, move_enemy.run_if(in_state(GameState::Playing)));
+            .add_systems(Update, move_enemy.run_if(in_state(GameState::Playing)))
+            .add_systems(
+                Update,
+                update_spawn_timer.run_if(in_state(GameState::Playing)),
+            );
+    }
+}
+
+fn update_spawn_timer(
+    time: Res<Time>,
+    mut modify_timer: ResMut<SpawnTimerModifier>,
+    mut timer: ResMut<SpawnTimer>,
+) {
+    if modify_timer.0.tick(time.delta()).just_finished() {
+        timer.0 = Timer::from_seconds(timer.0.duration().as_secs_f32() / 2., TimerMode::Repeating)
     }
 }
 
