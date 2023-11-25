@@ -6,10 +6,20 @@ use crate::{
     menu::{leaderboard::PlayerName, Leaderboard, Score},
     GameState,
 };
-use bevy::{prelude::*, sprite::collide_aabb::collide, window::PrimaryWindow};
+use bevy::{
+    prelude::*, render::render_resource::Texture, sprite::collide_aabb::collide,
+    window::PrimaryWindow,
+};
 use rand::seq::SliceRandom;
 
 pub struct PlayerPlugin;
+
+// #[derive(States, Default, Clone, Eq, PartialEq, Debug, Hash)]
+// enum PlayerState {
+//     #[default]
+//     Hidden,
+//     Moving,
+// }
 
 #[derive(Component)]
 pub struct Player {
@@ -36,7 +46,7 @@ fn spawn_player(mut commands: Commands, textures: Res<TextureAssets>) {
         .spawn(SpriteBundle {
             transform: Transform::from_translation(Vec3::new(0., 200., 1.))
                 .with_scale(Vec3::new(2., 2., 1.)),
-            texture: textures.character.clone(),
+            texture: textures.cactus.clone(),
             ..Default::default()
         })
         .insert(Player {
@@ -49,12 +59,14 @@ fn move_player(
     mut next_state: ResMut<NextState<GameState>>,
     time: Res<Time>,
     actions: Res<Actions>,
-    mut player_query: Query<(&mut Transform, &mut Player), With<Player>>,
+    mut player_query: Query<(&mut Transform, &mut Player, &mut Handle<Image>), With<Player>>,
+    textures: Res<TextureAssets>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     enemy_query: Query<&Transform, (With<Enemy>, Without<Player>)>,
     mut collision_event: EventWriter<Death>,
 ) {
     if actions.player_movement.is_none() {
+        *player_query.single_mut().2 = textures.cactus.clone();
         return;
     }
 
@@ -70,7 +82,8 @@ fn move_player(
     let x_max = window.width() / 2.0 - half_player_size;
     let y_min = -(window.height() / 2.0) + half_player_size;
     let y_max = window.height() / 2.0 - half_player_size;
-    let (mut player_transform, mut player) = player_query.single_mut();
+    let (mut player_transform, mut player, mut handle) = player_query.single_mut();
+    *handle = textures.ninja.clone();
     player.direction = actions.player_movement.unwrap();
     let new_pos = player_transform.translation + movement;
     if new_pos.x > x_min && new_pos.x < x_max && new_pos.y > y_min && new_pos.y < y_max {

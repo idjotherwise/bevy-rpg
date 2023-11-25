@@ -1,4 +1,6 @@
+use crate::actions::Actions;
 use crate::menu::Score;
+use crate::player::Player;
 use crate::{bullet::Bullet, loading::TextureAssets, GameState};
 use bevy::{prelude::*, sprite::collide_aabb::collide, window::PrimaryWindow};
 use rand::prelude::*;
@@ -70,7 +72,7 @@ fn spawn_enemy(
                     1.,
                 ))
                 .with_scale(Vec3::new(2., 2., 1.)),
-                texture: textures.ninja.clone(),
+                texture: textures.character.clone(),
                 ..Default::default()
             })
             .insert(Enemy {
@@ -78,18 +80,17 @@ fn spawn_enemy(
                     .normalize(),
                 health: 10,
                 collider: Collider,
-                direction_timer: Timer::from_seconds(
-                    rng.gen_range(3.0..10.0),
-                    TimerMode::Repeating,
-                ),
+                direction_timer: Timer::from_seconds(rng.gen_range(1.0..2.0), TimerMode::Repeating),
             });
     };
 }
 
 fn move_enemy(
     time: Res<Time>,
+    actions: Res<Actions>,
     mut commands: Commands,
     mut enemy_query: Query<(Entity, &mut Transform, Option<&mut Enemy>), With<Enemy>>,
+    player_query: Query<&Transform, (Without<Enemy>, With<Player>)>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     bullet_query: Query<&Transform, (With<Bullet>, Without<Enemy>)>,
     mut collision_events: EventWriter<CollisionEvent>,
@@ -115,10 +116,17 @@ fn move_enemy(
             }
             enemy.direction_timer.tick(time.delta());
             if enemy.direction_timer.finished() {
-                let mut rng = rand::thread_rng();
-                let new_direction =
-                    Vec2::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0)).normalize();
-                enemy.direction = new_direction;
+                if actions.player_movement.is_none() {
+                    let mut rng = rand::thread_rng();
+                    let new_direction =
+                        Vec2::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0)).normalize();
+                    enemy.direction = new_direction;
+                } else {
+                    let player_pos = player_query.single();
+                    let new_direction =
+                        Vec2::new(player_pos.translation.x, player_pos.translation.y).normalize();
+                    enemy.direction = new_direction;
+                };
             }
         }
     }

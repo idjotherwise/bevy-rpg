@@ -22,6 +22,8 @@ pub struct TextureAssets {
     pub shuriken: Handle<TextureAtlas>,
     #[asset(path = "character.png")]
     pub character: Handle<Image>,
+    #[asset(path = "cactus.png")]
+    pub cactus: Handle<Image>,
     #[asset(path = "enemy.png")]
     pub ninja: Handle<Image>,
 }
