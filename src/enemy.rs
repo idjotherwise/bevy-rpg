@@ -32,7 +32,7 @@ pub struct SpawnTimerModifier(pub Timer);
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, spawn_enemy.run_if(in_state(GameState::Playing)))
-            .insert_resource(SpawnTimer(Timer::from_seconds(2., TimerMode::Repeating)))
+            .insert_resource(SpawnTimer(Timer::from_seconds(5., TimerMode::Repeating)))
             .insert_resource(SpawnTimerModifier(Timer::from_seconds(
                 20.,
                 TimerMode::Repeating,
