@@ -1,21 +1,36 @@
 use bevy::prelude::*;
+use bevy_simple_text_input::TextInput;
+use bevy_simple_text_input::TextInputPlugin;
+use bevy_simple_text_input::TextInputSubmitEvent;
 
 use crate::loading::TextureAssets;
 pub use crate::menu::leaderboard::Leaderboard;
+use crate::menu::leaderboard::NameText;
 pub use crate::menu::leaderboard::Score;
 use crate::player::Death;
 use crate::GameState;
 
-mod leaderboard;
+use self::leaderboard::PlayerName;
+
+pub mod leaderboard;
 pub struct MenuPlugin;
+
+const BORDER_COLOR_ACTIVE: Color = Color::VIOLET;
+const BORDER_COLOR_INACTIVE: Color = Color::NONE;
+const BACKGROUND_COLOR_ACTIVE: Color = Color::DARK_GRAY;
+const BACKGROUND_COLOR_INACTIVE: Color = Color::WHITE;
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Menu), setup_menu)
             .init_resource::<Score>()
+            .init_resource::<PlayerName>()
             .insert_resource(Leaderboard::default())
             .add_systems(Update, click_play_button.run_if(in_state(GameState::Menu)))
-            .add_systems(OnExit(GameState::Menu), cleanup_menu);
+            .add_systems(OnExit(GameState::Menu), cleanup_menu)
+            .add_systems(Update, set_name.run_if(in_state(GameState::Menu)))
+            .add_systems(Update, focus.run_if(in_state(GameState::Menu)))
+            .add_plugins(TextInputPlugin);
     }
 }
 
@@ -44,13 +59,13 @@ fn setup_menu(
     mut commands: Commands,
     textures: Res<TextureAssets>,
     leaderboard: Res<Leaderboard>,
+    player: Res<PlayerName>,
     mut message: EventReader<Death>,
     mut evr_char: EventReader<ReceivedCharacter>,
     kbd: Res<Input<KeyCode>>,
     mut string: Local<String>,
 ) {
     if kbd.just_pressed(KeyCode::Return) {
-        println!("Playing as: {}", &*string);
         string.clear();
     }
     if kbd.just_pressed(KeyCode::Back) {
@@ -63,6 +78,44 @@ fn setup_menu(
     }
 
     commands.spawn((Camera2dBundle::default(), MainCamera));
+    commands
+        .spawn((
+            NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+                ..default()
+            },
+            Interaction::None,
+            Menu,
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                NodeBundle {
+                    style: Style {
+                        width: Val::Px(200.0),
+                        border: UiRect::all(Val::Px(5.0)),
+                        padding: UiRect::all(Val::Px(5.0)),
+                        ..default()
+                    },
+                    border_color: BorderColor(BORDER_COLOR_ACTIVE),
+                    background_color: Color::DARK_GRAY.into(),
+                    ..default()
+                },
+                TextInput {
+                    text_style: TextStyle {
+                        font_size: 40.,
+                        color: Color::rgb(0.9, 0.9, 0.9),
+                        ..default()
+                    },
+                    ..default()
+                },
+            ));
+        });
     commands
         .spawn((
             NodeBundle {
@@ -98,11 +151,7 @@ fn setup_menu(
                 ))
                 .with_children(|parent| {
                     parent.spawn(TextBundle::from_section(
-                        if message.is_empty() {
-                            "Play".to_string()
-                        } else {
-                            "Restart".to_string()
-                        },
+                        "Play".to_string(),
                         TextStyle {
                             font_size: 40.0,
                             color: Color::rgb(0.9, 0.9, 0.9),
@@ -116,10 +165,10 @@ fn setup_menu(
             NodeBundle {
                 style: Style {
                     flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::SpaceAround,
-                    left: Val::Px(10.),
-                    height: Val::Percent(90.),
+                    align_items: AlignItems::End,
+                    justify_content: JustifyContent::Start,
+                    left: Val::Px(20.),
+                    height: Val::Percent(80.),
                     position_type: PositionType::Absolute,
                     ..default()
                 },
@@ -128,11 +177,11 @@ fn setup_menu(
             Menu,
         ))
         .with_children(|children| {
-            for score in &leaderboard.leaderboard {
+            for (name, score) in &leaderboard.leaderboard {
                 if score.score > 0 {
                     children.spawn({
                         TextBundle::from_section(
-                            format!("Score: {}", score.score),
+                            format!("{}: {}", name.0, score.score),
                             TextStyle {
                                 font_size: 18.0,
                                 color: Color::rgb(0.9, 0.9, 0.9),
@@ -269,6 +318,27 @@ fn setup_menu(
 
         message.clear();
     };
+    commands.spawn((
+        // Create a TextBundle that has a Text with a list of sections.
+        TextBundle::from_sections([
+            TextSection::new(
+                "Name: ",
+                TextStyle {
+                    // This font is loaded and will be used instead of the default font.
+                    font_size: 40.0,
+                    ..default()
+                },
+            ),
+            TextSection::from_style(TextStyle {
+                font_size: 40.0,
+                color: Color::GOLD,
+                // If no font is specified, the default font (a minimal subset of FiraMono) will be used.
+                ..default()
+            }),
+        ]),
+        NameText,
+        Menu,
+    ));
 }
 
 #[derive(Component)]
@@ -276,6 +346,54 @@ struct ChangeState(GameState);
 
 #[derive(Component)]
 struct OpenLink(&'static str);
+
+fn set_name(
+    mut events: EventReader<TextInputSubmitEvent>,
+    mut name: ResMut<PlayerName>,
+    mut q_name_text: Query<&mut Text, With<NameText>>,
+    mut text_input_query: Query<(&mut TextInput, &mut BorderColor, &mut BackgroundColor)>,
+) {
+    for event in events.iter() {
+        info!("{:?} Setting name to: {}", event.entity, event.value);
+        name.set(&event.value);
+        for mut text in &mut q_name_text {
+            text.sections[1].value = format!("{}", name.0)
+        }
+        for (mut text_input, mut border_color, mut background_color) in &mut text_input_query {
+            text_input.inactive = true;
+            *border_color = BORDER_COLOR_INACTIVE.into();
+            *background_color = BACKGROUND_COLOR_INACTIVE.into();
+        }
+    }
+}
+
+fn focus(
+    query: Query<(Entity, &Interaction), Changed<Interaction>>,
+    mut text_input_query: Query<(
+        Entity,
+        &mut TextInput,
+        &mut BorderColor,
+        &mut BackgroundColor,
+    )>,
+) {
+    for (interaction_entity, interaction) in &query {
+        if *interaction == Interaction::Pressed {
+            for (entity, mut text_input, mut border_color, mut background_color) in
+                &mut text_input_query
+            {
+                if entity == interaction_entity {
+                    text_input.inactive = false;
+                    *border_color = BORDER_COLOR_ACTIVE.into();
+                    *background_color = BACKGROUND_COLOR_ACTIVE.into();
+                } else {
+                    text_input.inactive = true;
+                    *border_color = BORDER_COLOR_INACTIVE.into();
+                    *background_color = BACKGROUND_COLOR_INACTIVE.into();
+                }
+            }
+        }
+    }
+}
 
 fn click_play_button(
     mut next_state: ResMut<NextState<GameState>>,

@@ -3,7 +3,7 @@ use crate::{
     bullet::Bullet,
     enemy::Enemy,
     loading::TextureAssets,
-    menu::{Leaderboard, Score},
+    menu::{leaderboard::PlayerName, Leaderboard, Score},
     GameState,
 };
 use bevy::{prelude::*, sprite::collide_aabb::collide, window::PrimaryWindow};
@@ -110,10 +110,11 @@ fn finish_level(
     q_enemy: Query<Entity, With<Enemy>>,
     q_bullets: Query<Entity, With<Bullet>>,
     q_camera: Query<Entity, With<Camera2d>>,
+    player_name: Res<PlayerName>,
     mut leaderboard: ResMut<Leaderboard>,
     mut score: ResMut<Score>,
 ) {
-    leaderboard.add_score(score.score);
+    leaderboard.add_score(player_name.0.to_string(), score.score);
     score.score = 0;
     for entity in q_player.iter() {
         commands.entity(entity).despawn_recursive();
