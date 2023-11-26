@@ -1,15 +1,12 @@
 use crate::{
     actions::Actions,
     bullet::Bullet,
-    enemy::Enemy,
+    enemy::{Enemy, SpawnTimer},
     loading::TextureAssets,
     menu::{leaderboard::PlayerName, Leaderboard, Score},
     GameState,
 };
-use bevy::{
-    prelude::*, render::render_resource::Texture, sprite::collide_aabb::collide,
-    window::PrimaryWindow,
-};
+use bevy::{prelude::*, sprite::collide_aabb::collide, window::PrimaryWindow};
 use rand::seq::SliceRandom;
 
 pub struct PlayerPlugin;
@@ -126,6 +123,7 @@ fn finish_level(
     player_name: Res<PlayerName>,
     mut leaderboard: ResMut<Leaderboard>,
     mut score: ResMut<Score>,
+    mut timer: ResMut<SpawnTimer>,
 ) {
     let maybe_name = &*player_name.0;
     let name = if maybe_name == "" {
@@ -135,6 +133,7 @@ fn finish_level(
     };
     leaderboard.add_score(name, score.score);
     score.score = 0;
+    timer.reset();
     for entity in q_player.iter() {
         commands.entity(entity).despawn_recursive();
     }

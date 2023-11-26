@@ -7,6 +7,8 @@ use rand::prelude::*;
 
 pub struct EnemyPlugin;
 
+const INITIAL_SPAWN_TIMER: f32 = 5.0;
+
 #[derive(Component)]
 pub struct Collider;
 
@@ -25,6 +27,23 @@ struct CollisionEvent;
 
 #[derive(Resource)]
 pub struct SpawnTimer(pub Timer);
+
+impl SpawnTimer {
+    pub fn reset(&mut self) {
+        self.set(INITIAL_SPAWN_TIMER);
+    }
+    pub fn new(time: f32) -> Self {
+        Self(Timer::from_seconds(time, TimerMode::Repeating))
+    }
+    pub fn set(&mut self, time: f32) {
+        self.0 = Timer::from_seconds(time, TimerMode::Repeating);
+    }
+    pub fn halve(&mut self) {
+        eprintln!("Halving duration");
+        self.set(self.0.duration().as_secs_f32() / 2.);
+    }
+}
+
 #[derive(Resource)]
 pub struct SpawnTimerModifier(pub Timer);
 
@@ -32,7 +51,7 @@ pub struct SpawnTimerModifier(pub Timer);
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, spawn_enemy.run_if(in_state(GameState::Playing)))
-            .insert_resource(SpawnTimer(Timer::from_seconds(5., TimerMode::Repeating)))
+            .insert_resource(SpawnTimer::new(INITIAL_SPAWN_TIMER))
             .insert_resource(SpawnTimerModifier(Timer::from_seconds(
                 20.,
                 TimerMode::Repeating,
@@ -52,7 +71,7 @@ fn update_spawn_timer(
     mut timer: ResMut<SpawnTimer>,
 ) {
     if modify_timer.0.tick(time.delta()).just_finished() {
-        timer.0 = Timer::from_seconds(timer.0.duration().as_secs_f32() / 2., TimerMode::Repeating)
+        timer.halve()
     }
 }
 

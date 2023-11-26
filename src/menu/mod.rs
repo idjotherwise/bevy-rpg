@@ -59,7 +59,6 @@ fn setup_menu(
     mut commands: Commands,
     textures: Res<TextureAssets>,
     leaderboard: Res<Leaderboard>,
-    player: Res<PlayerName>,
     mut message: EventReader<Death>,
     mut evr_char: EventReader<ReceivedCharacter>,
     kbd: Res<Input<KeyCode>>,
