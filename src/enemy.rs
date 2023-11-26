@@ -142,8 +142,11 @@ fn move_enemy(
                     enemy.direction = new_direction;
                 } else {
                     let player_pos = player_query.single();
-                    let new_direction =
-                        Vec2::new(player_pos.translation.x, player_pos.translation.y).normalize();
+                    let new_direction = Vec2::new(
+                        player_pos.translation.x - enemy_transform.translation.x,
+                        player_pos.translation.y - enemy_transform.translation.y,
+                    )
+                    .normalize();
                     enemy.direction = new_direction;
                 };
             }
