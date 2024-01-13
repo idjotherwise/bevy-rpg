@@ -1,6 +1,6 @@
 use crate::actions::Actions;
 use crate::menu::Score;
-use crate::player::Player;
+use crate::player::{Experience, Player};
 use crate::{bullet::Bullet, loading::TextureAssets, GameState};
 use bevy::{prelude::*, sprite::collide_aabb::collide, window::PrimaryWindow};
 use rand::prelude::*;
@@ -109,7 +109,7 @@ fn move_enemy(
     actions: Res<Actions>,
     mut commands: Commands,
     mut enemy_query: Query<(Entity, &mut Transform, Option<&mut Enemy>), With<Enemy>>,
-    player_query: Query<&Transform, (Without<Enemy>, With<Player>)>,
+    mut player_query: Query<(&Transform, &mut Player), (Without<Enemy>, With<Player>)>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     bullet_query: Query<&Transform, (With<Bullet>, Without<Enemy>)>,
     mut collision_events: EventWriter<CollisionEvent>,
@@ -122,6 +122,7 @@ fn move_enemy(
     let x_max = window.width() / 2.0 - half_enemy_size;
     let y_min = -(window.height() / 2.0) + half_enemy_size;
     let y_max = window.height() / 2.0 - half_enemy_size;
+    let (player_pos, mut player) = player_query.single_mut();
     for (_, mut enemy_transform, enemy) in &mut enemy_query {
         if let Some(mut enemy) = enemy {
             let movement = Vec3::new(
@@ -141,7 +142,6 @@ fn move_enemy(
                         Vec2::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0)).normalize();
                     enemy.direction = new_direction;
                 } else {
-                    let player_pos = player_query.single();
                     let new_direction = Vec2::new(
                         player_pos.translation.x - enemy_transform.translation.x,
                         player_pos.translation.y - enemy_transform.translation.y,
@@ -167,6 +167,8 @@ fn move_enemy(
                 // TODO: Decrease durability of bullet until it despawns
                 // TODO: Increase a score counter when enemy is hit
                 score.score += 1;
+                // TODO: Make monster have experience value
+                player.add_experience(Experience(1));
                 if maybe_enemy.is_some() {
                     commands.entity(collider_entity).despawn();
                 }

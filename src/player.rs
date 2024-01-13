@@ -1,7 +1,10 @@
+use std::ops::AddAssign;
+
 use crate::{
     actions::Actions,
     bullet::Bullet,
     enemy::{Enemy, SpawnTimer},
+    level::Level,
     loading::TextureAssets,
     menu::{leaderboard::PlayerName, Leaderboard, Score},
     GameState,
@@ -11,18 +14,52 @@ use rand::seq::SliceRandom;
 
 pub struct PlayerPlugin;
 
-// #[derive(States, Default, Clone, Eq, PartialEq, Debug, Hash)]
-// enum PlayerState {
-//     #[default]
-//     Hidden,
-//     Moving,
-// }
+#[derive(Resource, Default)]
+pub struct Experience(pub i32);
+
+impl AddAssign for Experience {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0
+    }
+}
 
 #[derive(Component)]
 pub struct Player {
     pub direction: Vec2,
+    pub level: Level,
+    pub exp: Experience,
 }
+impl Player {
+    pub fn default() -> Self {
+        Player {
+            direction: Vec2::new(1., 0.).normalize(),
+            level: Level {
+                value: 1,
+                exp_max: 10,
+            },
+            exp: Experience(0),
+        }
+    }
 
+    // NOTE: if the level carries over after restarting level, this reset_level should be implemented
+    // pub fn reset_level(&mut self) {
+    //     self.level = Level {
+    //         value: 1,
+    //         exp_max: 10,
+    //     }
+    // }
+    pub fn level_up(&mut self) {
+        self.level.value += 1;
+        self.level.exp_max += 5;
+    }
+    pub fn add_experience(&mut self, experience: Experience) {
+        self.exp += experience;
+        if self.exp.0 >= self.level.exp_max {
+            self.level_up();
+            self.exp = Experience(0);
+        }
+    }
+}
 #[derive(Event, Default)]
 pub struct Death {
     pub message: String,
@@ -33,6 +70,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::Playing), spawn_player)
             .add_event::<Death>()
+            .init_resource::<Experience>()
             .add_systems(Update, move_player.run_if(in_state(GameState::Playing)))
             .add_systems(OnExit(GameState::Playing), finish_level);
     }
@@ -46,9 +84,7 @@ fn spawn_player(mut commands: Commands, textures: Res<TextureAssets>) {
             texture: textures.cactus.clone(),
             ..Default::default()
         })
-        .insert(Player {
-            direction: Vec2::new(1., 0.).normalize(),
-        });
+        .insert(Player::default());
 }
 
 #[allow(clippy::too_many_arguments)]

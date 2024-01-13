@@ -3,15 +3,19 @@
 mod actions;
 mod bullet;
 mod enemy;
+mod level;
 mod loading;
 mod menu;
 mod player;
+mod ui;
 use crate::actions::ActionsPlugin;
 use crate::bullet::BulletPlugin;
 use crate::enemy::EnemyPlugin;
+use crate::level::LevelPlugin;
 use crate::loading::LoadingPlugin;
 use crate::menu::MenuPlugin;
 use crate::player::PlayerPlugin;
+use crate::ui::UIPlugin;
 
 use bevy::app::App;
 #[cfg(debug_assertions)]
@@ -41,8 +45,10 @@ impl Plugin for GamePlugin {
         app.add_state::<GameState>().add_plugins((
             LoadingPlugin,
             MenuPlugin,
+            LevelPlugin,
             ActionsPlugin,
             PlayerPlugin,
+            UIPlugin,
             BulletPlugin,
             EnemyPlugin,
         ));
