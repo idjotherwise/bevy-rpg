@@ -126,7 +126,6 @@ fn move_enemy(
 ) {
     let window = window_query.get_single().unwrap();
     let half_enemy_size = 32.;
-    let speed = 90.;
     let x_min = -(window.width() / 2.0) + half_enemy_size;
     let x_max = window.width() / 2.0 - half_enemy_size;
     let y_min = -(window.height() / 2.0) + half_enemy_size;
@@ -134,6 +133,7 @@ fn move_enemy(
     let (player_pos, mut player) = player_query.single_mut();
     for (_, mut enemy_transform, enemy) in &mut enemy_query {
         if let Some(mut enemy) = enemy {
+            let speed = 20.0 * enemy.level as f32;
             let movement = Vec3::new(
                 enemy.direction.x * speed * time.delta_seconds(),
                 enemy.direction.y * speed * time.delta_seconds(),
