@@ -16,12 +16,22 @@ pub struct Collider;
 #[derive(Component)]
 pub struct Enemy {
     pub direction: Vec2,
-    pub health: i32,
+    pub level: i32,
     pub collider: Collider,
     pub direction_timer: Timer,
 }
 
-// TODO: Move to own submodule
+impl Enemy {
+    pub fn new(level: i32) -> Self {
+        let mut rng = rand::thread_rng();
+        Self {
+            direction: Vec2::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0)).normalize(),
+            level,
+            collider: Collider,
+            direction_timer: Timer::from_seconds(rng.gen_range(1.0..2.0), TimerMode::Repeating),
+        }
+    }
+}
 
 #[derive(Event, Default)]
 struct CollisionEvent;
@@ -81,9 +91,13 @@ fn spawn_enemy(
     mut commands: Commands,
     textures: Res<TextureAssets>,
     mut timer: ResMut<SpawnTimer>,
+    // TODO: Can this be a resource instead?
+    player_query: Query<(&Transform, &mut Player), (Without<Enemy>, With<Player>)>,
 ) {
+    let current_level = player_query.single().1.level;
     if timer.0.tick(time.delta()).just_finished() {
         let mut rng = rand::thread_rng();
+        let new_enemy_level = rng.gen_range(current_level.value - 1..current_level.value + 3);
         commands
             .spawn(SpriteBundle {
                 transform: Transform::from_translation(Vec3::new(
@@ -95,13 +109,7 @@ fn spawn_enemy(
                 texture: textures.character.clone(),
                 ..Default::default()
             })
-            .insert(Enemy {
-                direction: Vec2::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0))
-                    .normalize(),
-                health: 10,
-                collider: Collider,
-                direction_timer: Timer::from_seconds(rng.gen_range(1.0..2.0), TimerMode::Repeating),
-            });
+            .insert(Enemy::new(new_enemy_level));
     };
 }
 
@@ -168,7 +176,6 @@ fn move_enemy(
                 collision_events.send_default();
 
                 // TODO: Decrease durability of bullet until it despawns
-                // TODO: Increase a score counter when enemy is hit
                 score.score += 1;
                 // TODO: Make monster have experience value
                 player.add_experience(Experience(1));
