@@ -2,7 +2,8 @@ use crate::actions::Actions;
 use crate::menu::Score;
 use crate::player::{Experience, Player};
 use crate::{bullet::Bullet, loading::TextureAssets, GameState};
-use bevy::{prelude::*, sprite::collide_aabb::collide, window::PrimaryWindow};
+use bevy::math::bounding::{Aabb2d, IntersectsVolume};
+use bevy::{prelude::*, window::PrimaryWindow};
 use rand::prelude::*;
 
 pub struct EnemyPlugin;
@@ -155,13 +156,15 @@ fn move_enemy(
     for bullet_transform in &bullet_query {
         for (collider_entity, transform, maybe_enemy) in &enemy_query {
             let bullet_size = bullet_transform.scale.truncate();
-            let collision = collide(
-                bullet_transform.translation,
-                bullet_size * 10.,
-                transform.translation,
-                transform.scale.truncate() * 5.,
-            );
-            if collision.is_some() {
+            let collision = Aabb2d::new(
+                bullet_transform.translation.truncate(),
+                bullet_size * 10. / 2.,
+            )
+            .intersects(&Aabb2d::new(
+                transform.translation.truncate(),
+                transform.scale.truncate() * 5. / 2.,
+            ));
+            if collision {
                 collision_events.send_default();
 
                 // TODO: Decrease durability of bullet until it despawns

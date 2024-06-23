@@ -42,7 +42,8 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<GameState>().add_plugins((
+        // add_state is renamed init_state in 0.13
+        app.init_state::<GameState>().add_plugins((
             LoadingPlugin,
             MenuPlugin,
             LevelPlugin,

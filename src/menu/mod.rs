@@ -1,7 +1,7 @@
 use bevy::prelude::*;
-use bevy_simple_text_input::TextInput;
-use bevy_simple_text_input::TextInputPlugin;
-use bevy_simple_text_input::TextInputSubmitEvent;
+use bevy_simple_text_input::{
+    TextInputBundle, TextInputInactive, TextInputPlugin, TextInputSubmitEvent,
+};
 
 use crate::loading::TextureAssets;
 pub use crate::menu::leaderboard::Leaderboard;
@@ -61,18 +61,24 @@ fn setup_menu(
     leaderboard: Res<Leaderboard>,
     mut message: EventReader<Death>,
     mut evr_char: EventReader<ReceivedCharacter>,
-    kbd: Res<Input<KeyCode>>,
+    kbd: Res<ButtonInput<KeyCode>>,
     mut string: Local<String>,
 ) {
-    if kbd.just_pressed(KeyCode::Return) {
+    if kbd.just_pressed(KeyCode::Enter) {
         string.clear();
     }
-    if kbd.just_pressed(KeyCode::Back) {
+    if kbd.just_pressed(KeyCode::Backspace) {
         string.pop();
     }
-    for ev in evr_char.iter() {
-        if !ev.char.is_control() {
-            string.push(ev.char);
+    for ev in evr_char.read() {
+        if !ev
+            .char
+            .chars()
+            .last()
+            .expect("Invalid char entered")
+            .is_control()
+        {
+            string.push(ev.char.chars().last().expect("Invalid character entered"));
         }
     }
 
@@ -105,14 +111,14 @@ fn setup_menu(
                     background_color: Color::DARK_GRAY.into(),
                     ..default()
                 },
-                TextInput {
-                    text_style: TextStyle {
+                TextInputBundle::default()
+                    .with_text_style(TextStyle {
                         font_size: 40.,
                         color: Color::rgb(0.9, 0.9, 0.9),
                         ..default()
-                    },
-                    ..default()
-                },
+                    })
+                    .with_placeholder("Enter name..", None)
+                    .with_inactive(true),
             ));
         });
     commands
@@ -306,7 +312,7 @@ fn setup_menu(
             ))
             .with_children(|children| {
                 children.spawn(TextBundle::from_section(
-                    message.iter().next().unwrap().message.to_string(),
+                    message.read().next().unwrap().message.to_string(),
                     TextStyle {
                         font_size: 15.0,
                         color: Color::rgb(0.9, 0.9, 0.9),
@@ -350,16 +356,20 @@ fn set_name(
     mut events: EventReader<TextInputSubmitEvent>,
     mut name: ResMut<PlayerName>,
     mut q_name_text: Query<&mut Text, With<NameText>>,
-    mut text_input_query: Query<(&mut TextInput, &mut BorderColor, &mut BackgroundColor)>,
+    mut text_input_query: Query<(
+        &mut TextInputInactive,
+        &mut BorderColor,
+        &mut BackgroundColor,
+    )>,
 ) {
-    for event in events.iter() {
+    for event in events.read() {
         info!("{:?} Setting name to: {}", event.entity, event.value);
         name.set(&event.value);
         for mut text in &mut q_name_text {
             text.sections[1].value = format!("{}", name.0)
         }
-        for (mut text_input, mut border_color, mut background_color) in &mut text_input_query {
-            text_input.inactive = true;
+        for (mut inactive, mut border_color, mut background_color) in &mut text_input_query {
+            inactive.0 = true;
             *border_color = BORDER_COLOR_INACTIVE.into();
             *background_color = BACKGROUND_COLOR_INACTIVE.into();
         }
@@ -370,22 +380,22 @@ fn focus(
     query: Query<(Entity, &Interaction), Changed<Interaction>>,
     mut text_input_query: Query<(
         Entity,
-        &mut TextInput,
+        &mut TextInputInactive,
         &mut BorderColor,
         &mut BackgroundColor,
     )>,
 ) {
     for (interaction_entity, interaction) in &query {
         if *interaction == Interaction::Pressed {
-            for (entity, mut text_input, mut border_color, mut background_color) in
+            for (entity, mut inactive, mut border_color, mut background_color) in
                 &mut text_input_query
             {
                 if entity == interaction_entity {
-                    text_input.inactive = false;
+                    inactive.0 = false;
                     *border_color = BORDER_COLOR_ACTIVE.into();
                     *background_color = BACKGROUND_COLOR_ACTIVE.into();
                 } else {
-                    text_input.inactive = true;
+                    inactive.0 = true;
                     *border_color = BORDER_COLOR_INACTIVE.into();
                     *background_color = BACKGROUND_COLOR_INACTIVE.into();
                 }

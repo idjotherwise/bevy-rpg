@@ -9,7 +9,11 @@ use crate::{
     menu::{leaderboard::PlayerName, Leaderboard, Score},
     GameState,
 };
-use bevy::{prelude::*, sprite::collide_aabb::collide, window::PrimaryWindow};
+use bevy::{
+    math::bounding::{Aabb2d, IntersectsVolume},
+    prelude::*,
+    window::PrimaryWindow,
+};
 use rand::seq::SliceRandom;
 
 pub struct PlayerPlugin;
@@ -124,13 +128,15 @@ fn move_player(
     }
 
     for enemy_transform in &enemy_query {
-        let collision = collide(
-            player_transform.translation,
-            player_transform.scale.truncate() * 5.0,
-            enemy_transform.translation,
-            enemy_transform.scale.truncate() * 10.0,
-        );
-        if collision.is_some() {
+        let collision = Aabb2d::new(
+            player_transform.translation.truncate(),
+            player_transform.scale.truncate() * 5.0 / 2.,
+        )
+        .intersects(&Aabb2d::new(
+            enemy_transform.translation.truncate(),
+            enemy_transform.scale.truncate() * 10.0 / 2.,
+        ));
+        if collision {
             let msgs = vec![
                 "The ninjas got to you!",
                 "Oh no you got hit again :(",
