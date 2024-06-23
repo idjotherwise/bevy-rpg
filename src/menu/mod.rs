@@ -1,3 +1,4 @@
+use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy_simple_text_input::{
     TextInputBundle, TextInputInactive, TextInputPlugin, TextInputSubmitEvent,
@@ -19,6 +20,7 @@ const BORDER_COLOR_ACTIVE: Color = Color::VIOLET;
 const BORDER_COLOR_INACTIVE: Color = Color::NONE;
 const BACKGROUND_COLOR_ACTIVE: Color = Color::DARK_GRAY;
 const BACKGROUND_COLOR_INACTIVE: Color = Color::WHITE;
+const TEXT_COLOR: Color = Color::WHITE;
 
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
@@ -26,7 +28,7 @@ impl Plugin for MenuPlugin {
             .init_resource::<Score>()
             .init_resource::<PlayerName>()
             .insert_resource(Leaderboard::default())
-            .add_systems(Update, click_play_button.run_if(in_state(GameState::Menu)))
+            .add_systems(Update, menu_action.run_if(in_state(GameState::Menu)))
             .add_systems(OnExit(GameState::Menu), cleanup_menu)
             .add_systems(Update, set_name.run_if(in_state(GameState::Menu)))
             .add_systems(Update, focus.run_if(in_state(GameState::Menu)))
@@ -34,7 +36,7 @@ impl Plugin for MenuPlugin {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Copy, Clone)]
 struct ButtonColors {
     normal: Color,
     hovered: Color,
@@ -51,6 +53,13 @@ impl Default for ButtonColors {
 
 #[derive(Component)]
 struct Menu;
+
+#[derive(Component)]
+enum MenuButtonAction {
+    Play,
+    Quit,
+    OpenLink,
+}
 
 #[derive(Component)]
 pub struct MainCamera;
@@ -82,6 +91,21 @@ fn setup_menu(
         }
     }
 
+    let button_style = Style {
+        width: Val::Px(200.0),
+        height: Val::Px(50.0),
+        margin: UiRect::all(Val::Px(20.0)),
+        align_items: AlignItems::Center,
+        justify_content: JustifyContent::Center,
+        ..default()
+    };
+
+    let button_text_style = TextStyle {
+        font_size: 30.0,
+        color: TEXT_COLOR,
+        ..default()
+    };
+
     commands.spawn((Camera2dBundle::default(), MainCamera));
     commands
         .spawn((
@@ -99,70 +123,71 @@ fn setup_menu(
             Menu,
         ))
         .with_children(|parent| {
-            parent.spawn((
-                NodeBundle {
+            parent
+                .spawn(NodeBundle {
                     style: Style {
-                        width: Val::Px(200.0),
-                        border: UiRect::all(Val::Px(5.0)),
-                        padding: UiRect::all(Val::Px(5.0)),
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
                         ..default()
                     },
-                    border_color: BorderColor(BORDER_COLOR_ACTIVE),
-                    background_color: Color::DARK_GRAY.into(),
                     ..default()
-                },
-                TextInputBundle::default()
-                    .with_text_style(TextStyle {
-                        font_size: 40.,
-                        color: Color::rgb(0.9, 0.9, 0.9),
-                        ..default()
-                    })
-                    .with_placeholder("Enter name..", None)
-                    .with_inactive(true),
-            ));
-        });
-    commands
-        .spawn((
-            NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    ..default()
-                },
-                ..default()
-            },
-            Menu,
-        ))
-        .with_children(|children| {
-            let button_colors = ButtonColors::default();
-            children
-                .spawn((
-                    ButtonBundle {
-                        style: Style {
-                            width: Val::Px(140.0),
-                            height: Val::Px(50.0),
-                            align_items: AlignItems::Center,
-                            justify_content: JustifyContent::Center,
-                            ..Default::default()
-                        },
-                        background_color: button_colors.normal.into(),
-                        ..Default::default()
-                    },
-                    button_colors,
-                    ChangeState(GameState::Playing),
-                ))
+                })
                 .with_children(|parent| {
-                    parent.spawn(TextBundle::from_section(
-                        "Play".to_string(),
-                        TextStyle {
-                            font_size: 40.0,
-                            color: Color::rgb(0.9, 0.9, 0.9),
+                    parent.spawn((
+                        NodeBundle {
+                            style: Style {
+                                width: Val::Px(250.0),
+                                border: UiRect::all(Val::Px(5.0)),
+                                padding: UiRect::all(Val::Px(5.0)),
+                                ..default()
+                            },
+                            border_color: BorderColor(BORDER_COLOR_ACTIVE),
+                            background_color: Color::DARK_GRAY.into(),
                             ..default()
                         },
+                        TextInputBundle::default()
+                            .with_text_style(TextStyle {
+                                font_size: 30.,
+                                color: Color::rgb(0.9, 0.9, 0.9),
+                                ..default()
+                            })
+                            .with_placeholder("Enter name..", None)
+                            .with_inactive(true),
                     ));
+                    // Place flex stuff here
+                    let button_colors = ButtonColors::default();
+                    parent
+                        .spawn((
+                            ButtonBundle {
+                                style: button_style.clone(),
+                                background_color: button_colors.normal.clone().into(),
+                                ..Default::default()
+                            },
+                            button_colors,
+                            MenuButtonAction::Play,
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn(TextBundle::from_section(
+                                "Play".to_string(),
+                                button_text_style.clone(),
+                            ));
+                        });
+                    parent
+                        .spawn((
+                            ButtonBundle {
+                                style: button_style,
+                                background_color: button_colors.normal.clone().into(),
+                                ..Default::default()
+                            },
+                            button_colors,
+                            MenuButtonAction::Quit,
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn(TextBundle::from_section(
+                                "Quit".to_string(),
+                                button_text_style,
+                            ));
+                        });
                 });
         });
     commands
@@ -235,6 +260,7 @@ fn setup_menu(
                             ..default()
                         },
                         OpenLink("https://bevyengine.org"),
+                        MenuButtonAction::OpenLink,
                     ))
                     .with_children(|parent| {
                         parent.spawn(TextBundle::from_section(
@@ -273,6 +299,7 @@ fn setup_menu(
                             hovered: Color::rgb(0.25, 0.25, 0.25),
                         },
                         OpenLink("https://github.com/idjotherwise"),
+                        MenuButtonAction::OpenLink,
                     ))
                     .with_children(|parent| {
                         parent.spawn(TextBundle::from_section(
@@ -347,9 +374,6 @@ fn setup_menu(
 }
 
 #[derive(Component)]
-struct ChangeState(GameState);
-
-#[derive(Component)]
 struct OpenLink(&'static str);
 
 fn set_name(
@@ -404,7 +428,7 @@ fn focus(
     }
 }
 
-fn click_play_button(
+fn menu_action(
     mut next_state: ResMut<NextState<GameState>>,
     touch: Res<Touches>,
     mut interaction_query: Query<
@@ -412,26 +436,34 @@ fn click_play_button(
             &Interaction,
             &mut BackgroundColor,
             &ButtonColors,
-            Option<&ChangeState>,
             Option<&OpenLink>,
+            &MenuButtonAction,
         ),
         (Changed<Interaction>, With<Button>),
     >,
+    mut app_exit_events: EventWriter<AppExit>,
 ) {
     if touch.first_pressed_position().is_some() {
         next_state.set(GameState::Playing);
     };
-    for (interaction, mut color, button_colors, change_state, open_link) in &mut interaction_query {
+    for (interaction, mut color, button_colors, open_link, action) in &mut interaction_query {
         match *interaction {
-            Interaction::Pressed => {
-                if let Some(state) = change_state {
-                    next_state.set(state.0.clone());
-                } else if let Some(link) = open_link {
-                    if let Err(error) = webbrowser::open(link.0) {
-                        warn!("Failed to open link {error:?}");
+            Interaction::Pressed => match *action {
+                MenuButtonAction::Play => {
+                    next_state.set(GameState::Playing);
+                }
+                MenuButtonAction::Quit => {
+                    app_exit_events.send(AppExit);
+                }
+
+                MenuButtonAction::OpenLink => {
+                    if let Some(link) = open_link {
+                        if let Err(error) = webbrowser::open(link.0) {
+                            warn!("Failed to open link {error:?}");
+                        }
                     }
                 }
-            }
+            },
             Interaction::Hovered => {
                 *color = button_colors.hovered.into();
             }

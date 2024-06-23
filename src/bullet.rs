@@ -14,8 +14,11 @@ pub struct Bullet {
     pub lifetime: f32,
     pub speed: f32,
     pub direction: Vec2,
-    pub animation_timer: Timer,
+    pub animation_timer: AnimationTimer,
 }
+
+#[derive(Component, Deref, DerefMut)]
+pub struct AnimationTimer(Timer);
 
 /// Bullet related stuff like movement
 impl Plugin for BulletPlugin {
@@ -32,20 +35,14 @@ impl Plugin for BulletPlugin {
 
 fn spawn_bullet(
     mut commands: Commands,
-    textures: Res<TextureAssets>, // Might need adjusting to resmut to animate properly
+    textures: Res<TextureAssets>,
     actions: Res<Actions>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     player: Query<(&Transform, &Player), With<Player>>,
-    asset_server: Res<AssetServer>,
 ) {
     if !keyboard_input.pressed(KeyCode::Space) {
         return;
     }
-
-    let texture_handle = asset_server.load("shuriken.png");
-    let layout = TextureAtlasLayout::from_grid(Vec2::new(32.0, 32.0), 2, 1, None, None);
-    // Layout needs
-    // let texture_atlas_layout = textures.add(layout);
 
     let bullet_direction = if actions.player_movement.is_none() {
         player.single().1.direction
@@ -61,17 +58,17 @@ fn spawn_bullet(
             ))
             .with_scale(Vec3::new(1.5, 1.5, 1.)),
             atlas: TextureAtlas {
-                layout: textures.shuriken.clone(),
+                layout: textures.shuriken_layout.clone(),
                 index: 0,
             },
-            texture: texture_handle,
+            texture: textures.shuriken.clone(),
             ..default()
         })
         .insert(Bullet {
             lifetime: 10.,
             speed: 100.,
             direction: bullet_direction,
-            animation_timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+            animation_timer: AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
         });
 }
 
