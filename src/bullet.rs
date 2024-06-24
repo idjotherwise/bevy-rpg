@@ -44,32 +44,36 @@ fn spawn_bullet(
         return;
     }
 
-    let bullet_direction = if actions.player_movement.is_none() {
+    let mut bullet_direction = if actions.player_movement.is_none() {
         player.single().1.direction
     } else {
         actions.player_movement.unwrap()
     };
-    commands
-        .spawn(SpriteSheetBundle {
-            transform: Transform::from_translation(Vec3::new(
-                player.single().0.translation.x,
-                player.single().0.translation.y,
-                0.,
-            ))
-            .with_scale(Vec3::new(1.5, 1.5, 1.)),
-            atlas: TextureAtlas {
-                layout: textures.shuriken_layout.clone(),
-                index: 0,
-            },
-            texture: textures.shuriken.clone(),
-            ..default()
-        })
-        .insert(Bullet {
-            lifetime: 10.,
-            speed: 100.,
-            direction: bullet_direction,
-            animation_timer: AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
-        });
+    let number_of_bullets = player.single().1.level.value / 5 + 1;
+    for n in 1..number_of_bullets + 1 {
+        bullet_direction.x = bullet_direction.x * ((-1) ^ n) as f32;
+        commands
+            .spawn(SpriteSheetBundle {
+                transform: Transform::from_translation(Vec3::new(
+                    player.single().0.translation.x,
+                    player.single().0.translation.y,
+                    0.,
+                ))
+                .with_scale(Vec3::new(1.5, 1.5, 1.)),
+                atlas: TextureAtlas {
+                    layout: textures.shuriken_layout.clone(),
+                    index: 0,
+                },
+                texture: textures.shuriken.clone(),
+                ..default()
+            })
+            .insert(Bullet {
+                lifetime: 10.,
+                speed: 100.,
+                direction: bullet_direction,
+                animation_timer: AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+            });
+    }
 }
 
 fn move_bullet(
