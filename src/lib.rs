@@ -1,16 +1,16 @@
 #![allow(clippy::type_complexity)]
 
 mod actions;
-mod bullet;
 mod enemy;
+mod item;
 mod level;
 mod loading;
 mod menu;
 mod player;
 mod ui;
 use crate::actions::ActionsPlugin;
-use crate::bullet::BulletPlugin;
 use crate::enemy::EnemyPlugin;
+use crate::item::ItemPlugin;
 use crate::level::LevelPlugin;
 use crate::loading::LoadingPlugin;
 use crate::menu::MenuPlugin;
@@ -50,7 +50,7 @@ impl Plugin for GamePlugin {
             ActionsPlugin,
             PlayerPlugin,
             UIPlugin,
-            BulletPlugin,
+            ItemPlugin,
             EnemyPlugin,
         ));
 

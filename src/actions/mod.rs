@@ -28,7 +28,7 @@ impl Plugin for ActionsPlugin {
 #[derive(Default, Resource)]
 pub struct Actions {
     pub player_movement: Option<Vec2>,
-    pub enemy_movement: Option<Vec2>,
+    // pub enemy_movement: Option<Vec2>,
 }
 
 pub fn set_movement_actions(

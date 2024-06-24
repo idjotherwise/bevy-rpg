@@ -2,8 +2,8 @@ use std::ops::AddAssign;
 
 use crate::{
     actions::Actions,
-    bullet::Bullet,
     enemy::{Enemy, SpawnTimer},
+    item::Bullet,
     level::Level,
     loading::TextureAssets,
     menu::{leaderboard::PlayerName, Leaderboard, Score},

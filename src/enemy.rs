@@ -1,7 +1,7 @@
 use crate::actions::Actions;
 use crate::menu::Score;
 use crate::player::{Experience, Player};
-use crate::{bullet::Bullet, loading::TextureAssets, GameState};
+use crate::{item::Bullet, loading::TextureAssets, GameState};
 use bevy::math::bounding::{Aabb2d, IntersectsVolume};
 use bevy::{prelude::*, window::PrimaryWindow};
 use rand::prelude::*;
@@ -10,14 +10,14 @@ pub struct EnemyPlugin;
 
 const INITIAL_SPAWN_TIMER: f32 = 5.0;
 
-#[derive(Component)]
-pub struct Collider;
+// #[derive(Component)]
+// pub struct Collider;
 
 #[derive(Component)]
 pub struct Enemy {
     pub direction: Vec2,
     pub level: i32,
-    pub collider: Collider,
+    // pub collider: Collider,
     pub direction_timer: Timer,
 }
 
@@ -27,7 +27,7 @@ impl Enemy {
         Self {
             direction: Vec2::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0)).normalize(),
             level,
-            collider: Collider,
+            // collider: Collider,
             direction_timer: Timer::from_seconds(rng.gen_range(1.0..2.0), TimerMode::Repeating),
         }
     }
@@ -180,7 +180,7 @@ fn move_enemy(
                 // TODO: Make monster have experience value
                 player.add_experience(Experience(1));
                 if maybe_enemy.is_some() {
-                    commands.entity(collider_entity).despawn();
+                    commands.entity(collider_entity).despawn_recursive();
                 }
             }
         }

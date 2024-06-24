@@ -91,7 +91,7 @@ fn move_bullet(
         let moving = bullet.direction.normalize() * bullet.speed * time.delta_seconds();
         bullet_transform.translation += Vec3::new(moving.x, moving.y, 0.);
         if bullet.lifetime <= 0. {
-            commands.entity(entity).despawn();
+            commands.entity(entity).despawn_recursive();
         }
     }
 }
