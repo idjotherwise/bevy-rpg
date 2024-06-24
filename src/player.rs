@@ -109,7 +109,7 @@ fn move_player(
 
     let window = window_query.get_single().unwrap();
     let half_player_size = 32.;
-    let speed = 150.;
+    let speed = 150. + (player_query.single().1.level.value * 10) as f32;
     let movement = Vec3::new(
         actions.player_movement.unwrap().x * speed * time.delta_seconds(),
         actions.player_movement.unwrap().y * speed * time.delta_seconds(),

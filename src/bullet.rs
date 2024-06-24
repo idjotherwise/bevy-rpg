@@ -52,6 +52,7 @@ fn spawn_bullet(
     let number_of_bullets = player.single().1.level.value / 5 + 1;
     for n in 1..number_of_bullets + 1 {
         bullet_direction.x = bullet_direction.x * ((-1) ^ n) as f32;
+        bullet_direction.y = bullet_direction.y * ((-1) ^ (n + 1)) as f32;
         commands
             .spawn(SpriteSheetBundle {
                 transform: Transform::from_translation(Vec3::new(
@@ -87,7 +88,7 @@ fn move_bullet(
         if bullet.animation_timer.finished() {
             sprite.index = (sprite.index + 1) % 2;
         }
-        let moving = bullet.direction * bullet.speed * time.delta_seconds();
+        let moving = bullet.direction.normalize() * bullet.speed * time.delta_seconds();
         bullet_transform.translation += Vec3::new(moving.x, moving.y, 0.);
         if bullet.lifetime <= 0. {
             commands.entity(entity).despawn();
