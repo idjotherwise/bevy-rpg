@@ -47,7 +47,7 @@ fn spawn_bullet(
         return;
     }
     // Cap number of bullets at 100
-    if bullets_query.iter().count() > 100 {
+    if bullets_query.iter().count() > 200 {
         return;
     }
 
