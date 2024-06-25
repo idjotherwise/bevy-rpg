@@ -7,6 +7,8 @@ use crate::GameState;
 use bevy::prelude::*;
 use bevy::time::common_conditions::on_timer;
 
+use super::Damage;
+
 pub struct BulletPlugin;
 
 #[derive(Component)]
@@ -39,8 +41,13 @@ fn spawn_bullet(
     actions: Res<Actions>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     player: Query<(&Transform, &Player), With<Player>>,
+    bullets_query: Query<&Damage>,
 ) {
     if !keyboard_input.pressed(KeyCode::Space) {
+        return;
+    }
+    // Cap number of bullets at 100
+    if bullets_query.iter().count() > 100 {
         return;
     }
 
@@ -73,7 +80,8 @@ fn spawn_bullet(
                 speed: 100.,
                 direction: bullet_direction,
                 animation_timer: AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
-            });
+            })
+            .insert(Damage);
     }
 }
 

@@ -1,4 +1,5 @@
 use crate::actions::Actions;
+use crate::item::Damage;
 use crate::menu::Score;
 use crate::player::{Experience, Player};
 use crate::{item::Bullet, loading::TextureAssets, GameState};
@@ -93,7 +94,13 @@ fn spawn_enemy(
     mut timer: ResMut<SpawnTimer>,
     // TODO: Can this be a resource instead?
     player_query: Query<(&Transform, &mut Player), (Without<Enemy>, With<Player>)>,
+    enemies_query: Query<&Enemy>,
 ) {
+    // Cap number of enemies at 50
+    if enemies_query.iter().count() > 50 {
+        return;
+    }
+
     let current_level = player_query.single().1.level;
     if timer.0.tick(time.delta()).just_finished() {
         let mut rng = rand::thread_rng();
@@ -120,7 +127,7 @@ fn move_enemy(
     mut enemy_query: Query<(Entity, &mut Transform, Option<&mut Enemy>), With<Enemy>>,
     mut player_query: Query<(&Transform, &mut Player), (Without<Enemy>, With<Player>)>,
     window_query: Query<&Window, With<PrimaryWindow>>,
-    bullet_query: Query<&Transform, (With<Bullet>, Without<Enemy>)>,
+    bullet_query: Query<&Transform, (With<Damage>, Without<Enemy>)>,
     mut collision_events: EventWriter<CollisionEvent>,
     mut score: ResMut<Score>,
 ) {
